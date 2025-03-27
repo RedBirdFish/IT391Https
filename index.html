@@ -27,20 +27,17 @@
     	const apiKey = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
 
     	function fetchRestaurants(latitude, longitude) {
-        	const radius = 5000;
-        	const type = 'restaurant';
-        	const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${type}&key=${apiKey}`;
-       	 
-        	fetch(url)
-            	.then(response => response.json())
-            	.then(data => {
-                	if (data.results) {
-                    	restaurants = data.results;
-                    	showRestaurant();
-                	}
-            	})
-            	.catch(error => console.error('Error fetching restaurants:', error));
-    	}
+    fetch(`http://localhost:3000/places?lat=${latitude}&lng=${longitude}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.results) {
+                restaurants = data.results;
+                showRestaurant();
+            }
+        })
+        .catch(error => console.error("Error fetching restaurants:", error));
+}
+
 
     	function showRestaurant() {
         	if (currentIndex < restaurants.length) {
