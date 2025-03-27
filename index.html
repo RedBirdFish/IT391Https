@@ -26,17 +26,28 @@
     	let currentIndex = 0;
     	const apiKey = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg';
 
-    	function fetchRestaurants(latitude, longitude) {
+function fetchRestaurants(latitude, longitude) {
     fetch(`http://localhost:3000/places?lat=${latitude}&lng=${longitude}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error fetching restaurants: " + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.results) {
+            if (data.results && data.results.length > 0) {
                 restaurants = data.results;
-                showRestaurant();
+                currentIndex = 0; // Initialize to first restaurant
+                showRestaurant(); // Display first restaurant
+            } else {
+                console.error("No restaurants found.");
             }
         })
-        .catch(error => console.error("Error fetching restaurants:", error));
+        .catch(error => {
+            console.error("Error fetching restaurants:", error);
+        });
 }
+
 
 
     	function showRestaurant() {
