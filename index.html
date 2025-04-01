@@ -1,85 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Tinder</title>
-    <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #restaurant-card { display: inline-block; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-        img { width: 300px; height: 200px; object-fit: cover; border-radius: 10px; }
-        button { margin: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h1>Restaurant Finder</h1>
-    <div id="restaurant-card">
-        <img id="restaurant-img" src="" alt="Restaurant">
-        <h2 id="restaurant-name"></h2>
-        <p id="restaurant-address"></p>
-        <button onclick="swipeLeft()">❌ No</button>
-        <button onclick="swipeRight()">✅ Yes</button>
-    </div>
+<script>
+    let restaurants = [];
+    let currentIndex = 0;
 
-    <script>
-        let restaurants = [];
-        let currentIndex = 0;
-
-        function fetchRestaurants(latitude, longitude) {
-            fetch(`https://localhost:3000/places?lat=${latitude}&lng=${longitude}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Error fetching restaurants: " + response.status);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.results && data.results.length > 0) {
-                        restaurants = data.results;
-                        currentIndex = 0; // Initialize to first restaurant
-                        showRestaurant(); // Display first restaurant
-                    } else {
-                        console.error("No restaurants found.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching restaurants:", error);
-                });
-        }
-
-        function showRestaurant() {
-            if (currentIndex < restaurants.length) {
-                const place = restaurants[currentIndex];
-                document.getElementById('restaurant-img').src = place.photos
-                    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=REPLACE_WITH_BACKEND_KEY`
-                    : 'default_image.jpg';
-                document.getElementById('restaurant-name').textContent = place.name;
-                document.getElementById('restaurant-address').textContent = place.vicinity;
-            } else {
-                document.getElementById('restaurant-card').innerHTML = "<h2>No more restaurants!</h2>";
-            }
-        }
-
-        function swipeLeft() {
-            currentIndex++;
+    function fetchRestaurants(latitude, longitude) {
+        fetch(`https://localhost:3000/places?lat=${latitude}&lng=${longitude}`, {
+            mode: 'cors', // Explicitly enable CORS
+            credentials: 'include' // Required for cookies/auth
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            restaurants = data.results || [];
+            currentIndex = 0;
             showRestaurant();
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('Failed to load restaurants. Check console for details.');
+        });
+    }
+
+    function showRestaurant() {
+        const card = document.getElementById('restaurant-card');
+        if (currentIndex >= restaurants.length) {
+            card.innerHTML = '<h2>No more restaurants!</h2>';
+            return;
         }
 
-        function swipeRight() {
-            console.log('Liked:', restaurants[currentIndex].name);
-            currentIndex++;
-            showRestaurant();
-        }
+        const place = restaurants[currentIndex];
+        const img = document.getElementById('restaurant-img');
+        img.src = place.photos
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${API_KEY}`
+            : 'https://via.placeholder.com/400x200?text=No+Image';
+        
+        document.getElementById('restaurant-name').textContent = place.name || 'Unnamed Restaurant';
+        document.getElementById('restaurant-address').textContent = place.vicinity || 'Address not available';
+    }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                fetchRestaurants(position.coords.latitude, position.coords.longitude);
-            }, error => {
-                console.error('Error getting location:', error);
-            });
-        } else {
-            console.error('Geolocation is not supported by this browser.');
-        }
-    </script>
-</body>
-</html>
+    // Swipe functions remain the same
+    function swipeLeft() { currentIndex++; showRestaurant(); }
+    function swipeRight() { alert(`Liked: ${restaurants[currentIndex].name}`); currentIndex++; showRestaurant(); }
+
+    // Geolocation
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => fetchRestaurants(pos.coords.latitude, pos.coords.longitude),
+            err => console.error('Geolocation error:', err)
+        );
+    } else {
+        alert('Geolocation not supported. Using default coordinates.');
+        fetchRestaurants(40.7128, -74.0060); // Fallback: New York coordinates
+    }
+</script>
